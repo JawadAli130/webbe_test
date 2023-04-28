@@ -88,7 +88,22 @@ export class EventsService {
 
   @Get('events')
   async getEventsWithWorkshops() {
-    throw new Error('TODO task 1');
+    // throw new Error('TODO task 1');
+
+    const eventsWithWorkshops = await this.prisma.event.findMany({
+      select: {
+        id: true,
+        name: true,
+        workshops: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    return eventsWithWorkshops;
   }
 
   /* TODO: complete getFutureEventWithWorkshops so that it returns events with workshops, that have not yet started
@@ -159,6 +174,35 @@ export class EventsService {
      */
   @Get('futureevents')
   async getFutureEventWithWorkshops() {
-    throw new Error('TODO task 2');
+    // throw new Error('TODO task 2');
+    const eventsWithWorkshops = await this.prisma.event.findMany({
+      where: {
+        workshops: {
+          some: {
+            start: {
+              gt: new Date().toISOString(),
+            },
+          },
+        },
+      },
+      include: {
+        workshops: {
+          where: {
+            start: {
+              gt: new Date().toISOString(),
+            },
+          },
+          orderBy: {
+            start: 'asc',
+          },
+          take: 2,
+        },
+      },
+    });
+  
+    // We need to manually filter out events whose all workshops have already started
+    return eventsWithWorkshops.filter((event) =>
+      event.workshops.some((workshop) => new Date(workshop.start) > new Date())
+    );
   }
 }

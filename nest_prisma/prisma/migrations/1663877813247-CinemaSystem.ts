@@ -1,41 +1,75 @@
 import { Migration } from '../cli/migration';
+import { PrismaService } from '../../src/prisma/prisma.service';
+const prisma = new PrismaService();
 
 export default class implements Migration {
   async up() {
-    /**
-     # ToDo: Create a migration that creates all tables for the following user stories
+    try {
+      await prisma.$queryRaw`CREATE TABLE "movies" (
+        "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+        "name" TEXT NOT NULL,
+        "duration" INTEGER NOT NULL,
+        "description" TEXT,
+        "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )`;
 
-     For an example on how a UI for an api using this might look like, please try to book a show at https://in.bookmyshow.com/.
-     To not introduce additional complexity, please consider only one cinema.
+      await prisma.$queryRaw`CREATE TABLE "showrooms" (
+        "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+        "name" TEXT NOT NULL,
+        "capacity" INTEGER NOT NULL,
+        "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )`;
+    
+      await prisma.$queryRaw`CREATE TABLE "shows" (
+        "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+        "startTime" DATETIME NOT NULL,
+        "endTime" DATETIME NOT NULL,
+        "isBookedOut" BOOLEAN NOT NULL DEFAULT false,
+        "movieId" INTEGER NOT NULL REFERENCES "movies" ("id"),
+        "showroomId" INTEGER NOT NULL REFERENCES "showrooms" ("id"),
+        "price" DECIMAL(10, 2) NOT NULL,
+        "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )`;
+    
+      await prisma.$queryRaw`CREATE TABLE "seat_types" (
+        "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+        "name" TEXT NOT NULL,
+        "premiumPercentage" INTEGER NOT NULL DEFAULT 0,
+        "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )`;
+    
+      await prisma.$queryRaw`CREATE TABLE "seats" (
+        "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+        "rowNumber" INTEGER NOT NULL,
+        "seatNumber" INTEGER NOT NULL,
+        "seatTypeId" INTEGER NOT NULL REFERENCES "seat_types" ("id"),
+        "showroomId" INTEGER NOT NULL REFERENCES "showrooms" ("id"),
+        "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )`;
+    
+      await prisma.$queryRaw`CREATE TABLE "bookings" (
+        "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+        "name" TEXT NOT NULL,
+        "email" TEXT NOT NULL,
+        "phone" TEXT NOT NULL,
+        "showId" INTEGER NOT NULL REFERENCES "shows" ("id"),
+        "seatId" INTEGER NOT NULL REFERENCES "seats" ("id"),
+        "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )`;
 
-     Please list the tables that you would create including keys, foreign keys and attributes that are required by the user stories.
-
-     ## User Stories
-
-     **Movie exploration**
-     * As a user I want to see which films can be watched and at what times
-     * As a user I want to only see the shows which are not booked out
-
-     **Show administration**
-     * As a cinema owner I want to run different films at different times
-     * As a cinema owner I want to run multiple films at the same time in different showrooms
-
-     **Pricing**
-     * As a cinema owner I want to get paid differently per show
-     * As a cinema owner I want to give different seat types a percentage premium, for example 50 % more for vip seat
-
-     **Seating**
-     * As a user I want to book a seat
-     * As a user I want to book a vip seat/couple seat/super vip/whatever
-     * As a user I want to see which seats are still available
-     * As a user I want to know where I'm sitting on my ticket
-     * As a cinema owner I dont want to configure the seating for every show
-     */
-
-    throw new Error('TODO: implement migration in task 4');
+     } catch (e) {
+      console.error(e);
+    } finally {
+      await prisma.$disconnect();
+    }
   }
 
   async down() {
-    // do nothing
+    await prisma.$queryRaw`DROP TABLE "movies"`;
+    await prisma.$queryRaw`DROP TABLE "showrooms"`;
+    await prisma.$queryRaw`DROP TABLE "shows"`;
+    await prisma.$queryRaw`DROP TABLE "seat_types"`;
+    await prisma.$queryRaw`DROP TABLE "seats"`;
+    await prisma.$queryRaw`DROP TABLE "bookings"`;
   }
 }

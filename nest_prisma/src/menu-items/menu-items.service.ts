@@ -81,6 +81,43 @@ export class MenuItemsService {
     ]
   */
   async getMenuItems() {
-    throw new Error('TODO in task 3');
+    // throw new Error('TODO in task 3');
+
+    const menuItems = await this.prisma.menuItem.findMany({
+        include: { children: { include: { children: { include: { children: {} } } } } },
+        where: { parentId: null },
+    })
+    
+    return menuItems.map(item => {
+        const { id, name, url, parentId, createdAt, children } = item
+        return {
+        id,
+        name,
+        url,
+        parentId,
+        createdAt,
+        children: children.map(child => {
+            const { id, name, url, parentId, createdAt, children } = child
+            return {
+            id,
+            name,
+            url,
+            parentId,
+            createdAt,
+            children: children.map(grandchild => {
+                const { id, name, url, parentId, createdAt } = grandchild
+                return {
+                id,
+                name,
+                url,
+                parentId,
+                createdAt,
+                children: [],
+                }
+            }),
+            }
+        }),
+        }
+    })
   }
 }
