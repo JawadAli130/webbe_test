@@ -11,9 +11,10 @@ datasource db {
 }
 
 model Event {
-  id        Int      @id @default(autoincrement())
+  id        Int        @id @default(autoincrement())
   name      String
-  createdAt DateTime @default(dbgenerated("CURRENT_TIMESTAMP"))
+  createdAt DateTime   @default(dbgenerated("CURRENT_TIMESTAMP"))
+  workshops Workshop[]
 
   @@map("events")
 }
@@ -25,6 +26,9 @@ model MenuItem {
   parentId  Int?
   createdAt DateTime @default(dbgenerated("CURRENT_TIMESTAMP"))
 
+  parent    MenuItem? @relation("ChildItems", fields: [parentId], references: [id])
+  children  MenuItem[] @relation("ChildItems")
+  
   @@map("menu_items")
 }
 
@@ -35,6 +39,7 @@ model Workshop {
   createdAt DateTime @default(dbgenerated("CURRENT_TIMESTAMP"))
   start     DateTime
   end       DateTime
+  Event     Event    @relation(fields: [eventId], references: [id])
 
   @@map("workshops")
 }
